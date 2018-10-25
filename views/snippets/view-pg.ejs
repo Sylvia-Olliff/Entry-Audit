@@ -1,0 +1,28 @@
+	<% for(var x = 0; x < viewPGD.length; x++) { %>
+		<% var pgSet = viewPGD[x]; var labelSet = pgSet[pgSet.length-1]; %>
+		<table class="table table-responsive">
+			<thead>
+				<th class="bg-primary">
+					<strong>PG#</strong>
+				</th>
+				<% for(var y = 0; y < labelSet.length; y++) { %>
+					<th class="bg-primary">
+						<strong><%= labelSet[y] %></strong>
+					</th>
+				<% } %>
+			</thead>
+			<tbody>
+				<% for(var z = 0; z < pgSet.length-1; z++) { %>
+					<% var dataSet = pgSet[z]; %>
+					 
+					<tr>
+						<% for(var data in dataSet) { %>
+							<td class="bg-success">
+								<strong><%= dataSet[data] %></strong>
+							</td>
+						<% } %>
+					</tr>
+				<% } %>
+			</tbody>
+		</table>
+	<% } %>

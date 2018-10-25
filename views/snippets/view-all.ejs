@@ -1,0 +1,687 @@
+<% var count=1; var set=0; %>
+<script type="text/javascript">
+
+	'use strict';
+
+	$(document).ready(function(){
+
+		$('[data-toggle="tooltip"]').tooltip();
+		// $.material.init();
+
+		const contentsFile = "File Number: <%- viewAll.fileLevel.FILE %>";
+		const contentsEntry ="Entry Number: <%- viewAll.fileLevel.I0ENTNUM %>";
+		const contentsCustomerName = "Name: <%- viewAll.fileLevel.CIDDNAME %>";
+		const contentsCustomerNum = "Cus Number: <%- viewAll.fileLevel.CIDDCUS %>";
+
+		let toggles = [];
+		let tries = 0;
+		const MAX_TRIES = 3;
+
+		$("#scrollInv").html("");
+
+		$.each($('.inv1'), function(key, obj){
+			$("#scrollLin").append($('<option>', {
+				value: $(this).attr('id'),
+				text: $(this).attr('id')
+			}));
+		});
+
+		$("#scrollInv").on('change', function(){
+			var invSelection = $(this).val();
+
+			$("#scrollLin").html("");
+
+			$("#scrollLin").append($("<option>", {
+				value: "",
+				text: "none"
+			}));
+
+			$.each($('.' + invSelection), function(key, obj){
+				$("#scrollLin").append($('<option>', {
+					value: $(this).attr('id'),
+					text: $(this).attr('id')
+				}));
+			});
+		});
+
+		$.each($('.hasPG'), function(key, obj){
+			toggles[$(this).next().attr('id')] = false;
+		});
+
+		$('#fileData').html(contentsFile);
+		$('#entryData').html(contentsEntry);
+		$('#customerNum').html(contentsCustomerNum);
+		$('#customerName').html(contentsCustomerName);
+
+		$('.hasPG').on('click', function(evt){
+			evt.preventDefault();
+
+			var ID = $(this).next().attr('id');
+			var user = ($("#un" + $(this).attr('id')).val() == undefined) ? "" : $("#un" + $(this).attr('id')).val();
+
+			if (!toggles[ID]) {
+				var data = {
+					broker: $("#office").val(),
+					file: $('#fileNum').val(),
+					invoice: $(this).attr('id'),
+					line: ID,
+					user: user
+				}
+
+				getPGData(data, ID);
+
+			} else {
+				toggles[ID] = false;
+				$("#pgSet" + ID).html("");
+				$("#pgSet" + ID).hide();
+			}
+		});
+
+		new AutoNumeric(".currency", AutoNumeric.getPredefinedOptions().NorthAmerican);
+
+
+		function getPGData(data, ID) {
+			$.ajax({
+				type: "POST",
+				dataType: "JSON",
+				url: "viewPG",
+				data: data,
+				cache: false,
+				success: function(result) {
+					$("#pgSet" + ID).html(result.html);
+					$("#pgSet" + ID).show();
+					toggles[ID] = true;
+					tries = 0;
+				},
+				error: function(jqXHR, status, err) {
+					if((status === 'timeout' && tries < 3) || (status === 'error' && tries < 3) ) {
+						tries += 1;
+						getPGData(data, ID);
+					} else {
+						console.log("Error");
+						console.log(status, err);
+						tries = 0;
+					}
+
+				},
+				timeout: 5000
+			});
+		}
+
+	});
+</script>
+<div class="row">
+	<hr>
+	<div class="col-md-2"></div>
+	<div class="col-md-8">
+		<div class="panel panel-primary">
+			<div class="panel-heading text-center">
+				<h2 class="panel-title"><strong>File Header Info</strong></h2>
+			</div>
+			<div class="panel-body">
+				<div class="row bg-success">
+					<div class="col-md-6 text-center">
+						<h4><strong>Statement Type:</strong></h4>
+					</div>
+					<div class="col-md-6 text-info">
+						<h4><strong><%- viewAll.fileLevel.I0ISTAT %></strong></h4>
+					</div>
+				</div>
+				<div class="row bg-success">
+					<div class="col-md-6 text-center">
+						<h4><strong>Live Entry:</strong></h4>
+					</div>
+					<div class="col-md-6 text-info">
+						<h4><strong><%- viewAll.fileLevel.I0LIVE %></strong></h4>
+					</div>
+				</div>
+				<div class="row bg-success">
+					<div class="col-md-6 text-center">
+						<h4><strong>MFG ID/Seller:</strong></h4>
+					</div>
+					<div class="col-md-6 text-info">
+						<% if(!viewAll.fileLevel.HASHEAD) { %>
+							<h4><strong><%- viewAll.fileLevel.MFG_Seller.MID %></strong></h4>
+						<% } else { %>
+							<h4><strong><div data-toggle="tooltip" data-placement="bottom" title="" data-html="true" data-original-title="<p><b>NAME:</b> <%- viewAll.fileLevel.MFG_Seller.NAME %>,<hr><b>STREET:</b> <%- viewAll.fileLevel.MFG_Seller.STREET %><hr><b>CITY:</b> <%- viewAll.fileLevel.MFG_Seller.CITY %><hr><b>ZIP:</b> <%- viewAll.fileLevel.MFG_Seller.ZIP %><hr><b>COMMENTS:</b> <%- viewAll.fileLevel.MFG_Seller.COMMENTS %></p>"><%- viewAll.fileLevel.MFG_Seller.MID %></div></strong></h4>
+						<% } %>
+					</div>
+				</div>
+				<div class="row bg-success">
+					<div class="col-md-6 text-center">
+						<h4><strong>(Y/S):</strong></h4>
+					</div>
+					<div class="col-md-6 text-info">
+						<% if (viewAll.fileLevel.MFG_Seller.MID != "") { %>
+							<h4><strong>S</strong></h4>
+						<% } %>
+					</div>
+				</div>
+				<div class="row bg-success">
+					<div class="col-md-6 text-center">
+						<h4><strong>FGN EXP/Seller:</strong></h4>
+					</div>
+					<div class="col-md-6 text-info">
+						<h4><strong><%- viewAll.fileLevel.I0MIDF %></strong></h4>
+					</div>
+				</div>
+				<div class="row bg-success">
+					<div class="col-md-6 text-center">
+						<h4><strong>(Y/S):</strong></h4>
+					</div>
+					<div class="col-md-6 text-info">
+						<% if (viewAll.fileLevel.I0MIDF.trim() != "") { %>
+							<h4><strong>S</strong></h4>
+						<% } %>
+					</div>
+				</div>
+				<div class="row bg-success">
+					<div class="col-md-6 text-center">
+						<h4><strong>Produce SEB?:</strong></h4>
+					</div>
+					<div class="col-md-6 text-info">
+						<h4><strong><%- viewAll.fileLevel.I0SEB %></strong></h4>
+					</div>
+				</div>
+				<div class="row bg-success">
+					<div class="col-md-6 text-center">
+						<h4><strong>Bond Type:</strong></h4>
+					</div>
+					<div class="col-md-6 text-info">
+						<h4><strong><%- viewAll.fileLevel.I0BTYPE %></strong></h4>
+					</div>
+				</div>
+				<div class="row bg-success">
+					<div class="col-md-6 text-center">
+						<h4><strong>Entry Type</strong></h4>
+					</div>
+					<div class="col-md-6 text-info">
+						<h4><strong><%- viewAll.fileLevel.I0TYPEE %></strong></h4>
+					</div>
+				</div>
+				<div class="row bg-success">
+					<div class="col-md-6 text-center">
+						<h4><strong>Description</strong></h4>
+					</div>
+					<div class="col-md-6 text-info">
+						<h4><strong><%- viewAll.fileLevel.I0GOODFS %></strong></h4>
+					</div>
+				</div>
+				<div class="row bg-success">
+					<div class="col-md-6 text-center">
+						<h4><strong>MOT:</strong></h4>
+					</div>
+					<div class="col-md-6 text-info">
+						<h4><strong><%- viewAll.fileLevel.I0MOTN %></strong></h4>
+					</div>
+				</div>
+				<div class="row bg-success">
+					<div class="col-md-6 text-center">
+						<h4><strong>Entry Date:</strong></h4>
+					</div>
+					<div class="col-md-6 text-info">
+						<h4><strong><%- viewAll.fileLevel.I0DATE %></strong></h4>
+					</div>
+				</div>
+				<div class="row bg-success">
+					<div class="col-md-6 text-center">
+						<h4><strong>Payment Due Date:</strong></h4>
+					</div>
+					<div class="col-md-6 text-info">
+						<h4><strong><%- viewAll.fileLevel.I0DUEDAT %></strong></h4>
+					</div>
+				</div>
+				<div class="row bg-success">
+					<div class="col-md-6 text-center">
+						<h4><strong>Country of Origin:</strong></h4>
+					</div>
+					<div class="col-md-6 text-info">
+						<h4><strong><%- viewAll.fileLevel.I0OISO %></strong></h4>
+					</div>
+				</div>
+				<div class="row bg-success">
+					<div class="col-md-6 text-center">
+						<h4><strong>Country of Export:</strong></h4>
+					</div>
+					<div class="col-md-6 text-info">
+						<h4><strong><%- viewAll.fileLevel.I0EISO %></strong></h4>
+					</div>
+				</div>
+				<div class="row bg-success">
+					<div class="col-md-6 text-center">
+						<h4><strong>ETA at Entry Port:</strong></h4>
+					</div>
+					<div class="col-md-6 text-info">
+						<h4><strong><%- viewAll.fileLevel.I0ESTDOA %></strong></h4>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="col-md-2"></div>
+</div>
+<br /><br /><br /><br /><br />
+
+
+<% for(var i=1; i <= Object.keys(viewAll.invoiceDetails).length; i++) { %>
+	<script type="text/javascript">
+		$(document).ready(function(){
+			$("#scrollInv").append($('<option>', {
+				value: "inv<%= i %>",
+				text: "<%= i %>"
+			}));
+		});
+	</script>
+
+	<div id="inv<%- i %>" class="row">
+		<div class="col-md-2"></div>
+		<div class="col-md-8">
+			<div class="panel panel-warning">
+				<div class="panel-heading text-center">
+					<h2 class="panel-title text-white"><strong>Invoice <%- i %> -- <%= viewAll.invoiceDetails[i].I2COMINV %></strong></h2>
+				</div>
+				<div class="panel-body">
+					<div class="row bg-success">
+						<div class="col-md-6 text-center">
+							<h4><strong>Total Invoice Value:</strong></h4>
+						</div>
+						<div class="col-md-6 text-info">
+							<h4><strong><span class="currency"><%= viewAll.invoiceDetails[i].I2GRI35 %></span></strong></h4>
+						</div>
+					</div>
+					<div class="row bg-success">
+						<div class="col-md-6 text-center">
+							<h4><strong>Currency Factor:</strong></h4>
+						</div>
+						<div class="col-md-6 text-info">
+							<h4><strong><%= viewAll.invoiceDetails[i].I2CRF34 %></strong></h4>
+						</div>
+					</div>
+					<div class="row bg-success">
+						<div class="col-md-6 text-center">
+							<h4><strong>Gross Weight (if pro-rated): <div class="text-danger">(Whole Number)</div></strong></h4>
+						</div>
+						<div class="col-md-6 text-info">
+							<h4><strong><%= viewAll.invoiceDetails[i].I2IGRWGT %></strong></h4>
+						</div>
+					</div>
+					<div class="row bg-success">
+						<div class="col-md-6 text-center">
+							<h4><strong>Currency Country Code:</strong></h4>
+						</div>
+						<div class="col-md-6 text-info">
+							<h4><strong><%= viewAll.invoiceDetails[i].I2ISOE %></strong></h4>
+						</div>
+					</div>
+					<div class="row bg-success">
+						<div class="col-md-6 text-center">
+							<h4><strong>Charges (if pro-rated):</strong></h4>
+						</div>
+						<div class="col-md-6 text-info">
+							<h4><strong class="currency"><%= viewAll.invoiceDetails[i].I2CNI40 %></strong></h4>
+						</div>
+					</div>
+					<div class="row bg-success">
+						<div class="col-md-6 text-center">
+							<h4><strong>REP (K/L):</strong></h4>
+						</div>
+						<div class="col-md-6 text-info">
+							<h4><strong><%= viewAll.invoiceDetails[i].I2GRWR %></strong></h4>
+						</div>
+					</div>
+					<div class="row bg-success">
+						<div class="col-md-6 text-center">
+							<h4><strong>Dutiable Charges:</strong></h4>
+						</div>
+						<div class="col-md-6 text-info">
+							<h4><strong class="currency"><%= viewAll.invoiceDetails[i].I2DC37 %></strong></h4>
+						</div>
+					</div>
+					<div class="row bg-success">
+						<div class="col-md-6 text-center">
+							<h4><strong>Related:</strong></h4>
+						</div>
+						<div class="col-md-6 text-info">
+							<h4><strong><%= viewAll.invoiceDetails[i].I2REL01 %></strong></h4>
+						</div>
+					</div>
+					<div class="row bg-success">
+						<div class="col-md-6 text-center">
+							<h4><strong>Invoice Package Count:<div class="text-danger">(Whole Number)</div></strong></h4>
+						</div>
+						<div class="col-md-6 text-info">
+							<h4><strong><%= viewAll.invoiceDetails[i].I2BLQIH %></strong></h4>
+						</div>
+					</div>
+					<div class="row bg-success">
+						<div class="col-md-6 text-center">
+							<h4><strong>Invoice Pkg Type (UOM):</strong></h4>
+						</div>
+						<div class="col-md-6 text-info">
+							<h4><strong><%= viewAll.invoiceDetails[i].I2BLUIH %></strong></h4>
+						</div>
+					</div>
+					<div class="row bg-success">
+						<div class="col-md-6 text-center">
+							<h4><strong>Non-Dutiable Charges:</strong></h4>
+						</div>
+						<div class="col-md-6 text-info">
+							<h4><strong class="currency"><%= viewAll.invoiceDetails[i].I2NDC37 %></strong></h4>
+						</div>
+					</div>
+					<div class="row bg-success">
+						<div class="col-md-6 text-center">
+							<h4><strong>Commercial Invoice:</strong></h4>
+						</div>
+						<div class="col-md-6 text-info">
+							<h4><strong><%= viewAll.invoiceDetails[i].I2COMINV %></strong></h4>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="col-md-2"></div>
+	</div>
+
+	<% do { set++%>
+
+		<div class="row inv<%- i %>" id="lin<%- set %>">
+			<div class="col-md-1"></div>
+			<div class="col-md-10">
+				<div class="panel panel-danger">
+					<div class="panel-heading text-center">
+						<h2 class="panel-title text-white"><strong>Line Item <%- set %></strong></h2>
+					</div>
+					<div class="panel-body">
+						<div class="row">
+							<table class="table table-responsive">
+								<thead class="bg-primary">
+									<th>######</th>
+									<th><strong>USTS:</strong></th>
+									<th><strong>SPI HTS:</strong></th>
+									<th><strong>SPI2 HTS:</strong></th>
+									<th><strong>SPI Country:</strong></th>
+									<th><strong>Column HTS:</strong></th>
+									<th><strong>Value HTS:</strong></th>
+									<th><strong>Quantity 1 HTS:</strong></th>
+									<th><strong>Quantity 2 HTS:</strong></th>
+									<th><strong>Quantity 3 HTS:</strong></th>
+									<th><strong>OA HTS:</strong></th>
+								</thead>
+								<tr>
+									<td class="bg-success">
+										<strong>HTS 1</strong>
+									</td>
+									<td class="bg-success">
+										<span><strong><%= viewAll.lineItems[count].I3TSU41 %></strong></span>
+									</td>
+									<td class="bg-success">
+										<span><strong><%= viewAll.lineItems[count].I3SPIP1 %></strong></span>
+									</td>
+									<td class="bg-success">
+										<span><strong><%= viewAll.lineItems[count].I3SPIS1 %></strong></span>
+									</td>
+									<td class="bg-success">
+										<span><strong><%= viewAll.lineItems[count].I3SPIC1 %></strong></span>
+									</td>
+									<td class="bg-success">
+										<span><strong><%= viewAll.lineItems[count].I3RATE %></strong></span>
+									</td>
+									<td class="bg-success">
+										<span><strong class="currency"><%= viewAll.lineItems[count].I3TSV42 %></strong></span>
+									</td>
+									<td class="bg-success">
+										<span><strong><%= viewAll.lineItems[count].I3QTY44 %></strong></span>
+									</td>
+									<td class="bg-success">
+										<span><strong><%= viewAll.lineItems[count].I3QTY45 %></strong></span>
+									</td>
+									<td class="bg-success">
+								<span><strong><%= viewAll.lineItems[count].I3QTY46 %></strong></span>
+									</td>
+									<td class="bg-success">
+										<span><strong><%= viewAll.lineItems[count].I3OA1 %></strong></span>
+									</td>
+								</tr>
+								<tr>
+									<td class="bg-success">
+										<strong>HTS 2</strong>
+									</td>
+									<td class="bg-success">
+										<span><strong><%= viewAll.lineItems[count].HTS2 %></strong></span>
+									</td>
+									<td class="bg-success">
+										<span><strong><%= viewAll.lineItems[count].I3SPIP2 %></strong></span>
+									</td>
+									<td class="bg-success">
+										<span><strong><%= viewAll.lineItems[count].I3SPIS2 %></strong></span>
+									</td>
+									<td class="bg-success">
+										<span><strong><%= viewAll.lineItems[count].I3SPIC2 %></strong></span>
+									</td>
+									<td class="bg-success">
+										<span><strong><%= viewAll.lineItems[count].I3RATE2 %></strong></span>
+									</td>
+									<td class="bg-success">
+										<span><strong class="currency"><%= viewAll.lineItems[count].I3TSVA2 %></strong></span>
+									</td>
+									<td class="bg-success">
+										<span><strong><%= viewAll.lineItems[count].I3QTY54 %></strong></span>
+									</td>
+									<td class="bg-success">
+										<span><strong><%= viewAll.lineItems[count].I3QTY55 %></strong></span>
+									</td>
+									<td class="bg-success">
+										<span><strong><%= viewAll.lineItems[count].I3QTY56 %></strong></span>
+									</td>
+									<td class="bg-success">
+										<span><strong><%= viewAll.lineItems[count].I3OA2 %></strong></span>
+									</td>
+								</tr>
+								<tr>
+									<td class="bg-success">
+										<strong>HTS 3</strong>
+									</td>
+									<td class="bg-success">
+										<span><strong><%= viewAll.lineItems[count].HTS3 %></strong></span>
+									</td>
+									<td class="bg-success">
+										<span><strong><%= viewAll.lineItems[count].I3SPIP3 %></strong></span>
+									</td>
+									<td class="bg-success">
+										<span><strong><%= viewAll.lineItems[count].I3SPIS3 %></strong></span>
+									</td>
+									<td class="bg-success">
+										<span><strong><%= viewAll.lineItems[count].I3SPIC3 %></strong></span>
+									</td>
+									<td class="bg-success">
+										<span><strong><%= viewAll.lineItems[count].I3RATE3 %></strong></span>
+									</td>
+									<td class="bg-success">
+										<span><strong class="currency"><%= viewAll.lineItems[count].I3TSVA3 %></strong></span>
+									</td>
+									<td class="bg-success">
+										<span><strong><%= viewAll.lineItems[count].I3QTY64 %></strong></span>
+									</td>
+									<td class="bg-success">
+										<span><strong><%= viewAll.lineItems[count].I3QTY65 %></strong></span>
+									</td>
+									<td class="bg-success">
+										<span><strong><%= viewAll.lineItems[count].I3QTY66 %></strong></span>
+									</td>
+									<td class="bg-success">
+										<span><strong><%= viewAll.lineItems[count].I3OA3 %></strong></span>
+									</td>
+								</tr>
+							</table>
+							<table class="table table-responsive">
+								<thead class="bg-primary">
+									<th colspan="11" class="text-center"><strong> Line Info </strong></th>
+								</thead>
+								<tr>
+									<td class="bg-primary">
+										<strong>Yield: </strong>
+									</td>
+									<td class="bg-primary">
+										<strong>Fee Exempt: </strong>
+									</td>
+									<td class="bg-primary">
+										<strong>Visa Number: </strong>
+									</td>
+									<td class="bg-primary">
+										<strong>CVD Case #: </strong>
+									</td>
+									<td class="bg-primary">
+										<strong>CVD Rate: </strong>
+									</td>
+									<td class="bg-primary">
+										<strong>ADD Case #: </strong>
+									</td>
+									<td class="bg-primary">
+										<strong>ADD Rate: </strong>
+									</td>
+									<td class="bg-primary">
+										<strong>Line Weight: </strong>
+									</td>
+									<td class="bg-primary">
+										<strong>Non-Duty Chg: </strong>
+									</td>
+									<td class="bg-primary">
+										<strong>Dutiable Charges: </strong>
+									</td>
+								</tr>
+								<tr>
+									<td class="bg-success">
+										<span><strong><%= viewAll.lineItems[count].I3YIELD %></strong></span>
+									</td>
+									<td class="bg-success">
+										<span><strong><%= viewAll.lineItems[count].I3FEEEXP %></strong></span>
+									</td>
+									<td class="bg-success">
+										<span><strong><%= viewAll.lineItems[count].VISANUM %></strong></span>
+									</td>
+									<td class="bg-success">
+										<span><strong><%= viewAll.lineItems[count].CVDCASE %></strong></span>
+									</td>
+									<td class="bg-success">
+										<span><strong><%= viewAll.lineItems[count].I3CVDRAT %></strong></span>
+									</td>
+									<td class="bg-success">
+										<span><strong><%= viewAll.lineItems[count].ADDCASE %></strong></span>
+									</td>
+									<td class="bg-success">
+										<span><strong><%= viewAll.lineItems[count].I3ADDRAT %></strong></span>
+									</td>
+									<td class="bg-success">
+										<span><strong><%= viewAll.lineItems[count].I3LINWGT %></strong></span>
+									</td>
+									<td class="bg-success">
+										<span><strong class="currency"><%= viewAll.lineItems[count].I3CHGNDC %></strong></span>
+									</td>
+									<td class="bg-success">
+										<span><strong class="currency"><%= viewAll.lineItems[count].I3CHGDC %></strong></span>
+									</td>
+								</tr>
+								<tr>
+									<td class="bg-primary">
+										<strong>C/O Line: </strong>
+									</td>
+									<td class="bg-primary">
+										<strong>C/O Header: </strong>
+									</td>
+									<td class="bg-primary">
+										<strong>C/E: </strong>
+									</td>
+									<td class="bg-primary">
+										<strong>C/E Header: </strong>
+									</td>
+									<td class="bg-primary">
+										<strong>Charge: </strong>
+									</td>
+									<td class="bg-primary">
+										<strong>MFG/Seller: </strong>
+									</td>
+									<td class="bg-primary">
+										<strong>MFG/Seller (Y/S): </strong>
+									</td>
+									<td class="bg-primary">
+										<strong>FGNEXP/Seller: </strong>
+									</td>
+									<td class="bg-primary" colspan="2">
+										<strong>FGNEXP/Seller (Y/S): </strong>
+									</td>
+								</tr>
+								<tr>
+									<td class="bg-success">
+										<span><strong><%= viewAll.lineItems[count].I3CO %></strong></span>
+									</td>
+									<td class="bg-success">
+										<span><strong><%= viewAll.lineItems[count].I0OISO %></strong></span>
+									</td>
+									<td class="bg-success">
+										<span><strong><%= viewAll.lineItems[count].I3COE %></strong></span>
+									</td>
+									<td class="bg-success">
+										<span><strong><%= viewAll.lineItems[count].I0EISO %></strong></span>
+									</td>
+									<td class="bg-success">
+										<span><strong class="currency"><%= viewAll.lineItems[count].I3CHG48 %></strong></span>
+									</td>
+									<td class="bg-success">
+										<span><strong><div data-toggle="tooltip" data-placement="bottom" title="" data-html="true" data-original-title="<p><b>NAME:</b> <%- viewAll.lineItems[count].MFG.NAME %>,<hr><b>STREET:</b> <%- viewAll.lineItems[count].MFG.STREET %><hr><b>CITY:</b> <%- viewAll.lineItems[count].MFG.CITY %><hr><b>ZIP:</b> <%- viewAll.lineItems[count].MFG.ZIP %><hr><b>COMMENTS:</b> <%- viewAll.lineItems[count].MFG.COMMENTS %></p>"><%= viewAll.lineItems[count].MFG.MID %></strong></span>
+									</td>
+									<td class="bg-success">
+										<span><strong></strong></span>
+									</td>
+									<td class="bg-success">
+										<span><strong><%= viewAll.lineItems[count].I3MIDF %></strong></span>
+									</td>
+									<td class="bg-success" colspan="2">
+										<span><strong></strong></span>
+									</td>
+								</tr>
+							</table>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="col-md-1"></div>
+		</div>
+
+		<div class="row">
+			<div class="col-md-12">
+				<% if(viewAll.PGDATA[viewAll.lineItems[count].I3TCNT] !== undefined) { %>
+					<table class="table table-condensed">
+						<tr>
+							<td class="text-center">
+								<button id="<%= i %>" class="hasPG btn btn-info btn-large btn-raised">PGDATA</button>
+								<input id="<%= viewAll.lineItems[count].I3TCNT %>" class="line" type="text" hidden>
+							</td>
+						</tr>
+					</table>
+				<% } else { %>
+					<table class="table table-condensed">
+						<tr>
+							<td class="text-danger text-center">
+								<strong>NO PG DATA FOUND!</strong>
+							</td>
+						</tr>
+					</table>
+				<% } %>
+			</div>
+		</div>
+		<hr>
+		<div class="row">
+			<div class="col-md-1"></div>
+
+			<div id="pgSet<%= viewAll.lineItems[count].I3TCNT %>" class="col-md-10" hidden></div>
+
+			<div class="col-md-1"></div>
+		</div>
+		<hr>
+		<div class="progress">
+  			<div class="progress-bar progress-bar-info" style="width: 100%"></div>
+		</div>
+		<hr>
+	<% count++; } while(Object.keys(viewAll.lineItems).length >= count && viewAll.lineItems[count].I3ICNT == i) set=0; %>
+<% } %>

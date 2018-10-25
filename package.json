@@ -1,0 +1,51 @@
+{
+  "name": "entry-audit",
+  "version": "1.0.0",
+  "description": "Entry Auditing Program",
+  "main": "index.js",
+  "scripts": {
+    "clean": "rimraf dist/",
+    "build": "babel ./ --out-dir dist/ --ignore ./node_modules,./.babelrc,./package.json,./npm-debug.log,./out/,.ejs,**/*.test.js,**/__mocks__,./views --copy-files",
+    "copy-views": "mkdir ./dist/views && cp -rf ./views ./dist/",
+    "start": "npm run clean && npm run build && npm run copy-views && cd ./dist && node ./index.js",
+
+    "clean-pro": "rimraf /QOpenSys/PRO/Entry-Audit",
+    "build-pro": "babel /QOpenSys/DEV/JOE/Entry-Audit --out-dir /QOpenSys/PRO/Entry-Audit/ --ignore ./node_modules,./.babelrc,./package.json,./npm-debug.log,./out/,.ejs,**/*.test.js,**/__mocks__,./views --copy-files",
+    "copy-package-pro": "cp ./package.json /QOpenSys/PRO/Entry-Audit/",
+    "copy-views-pro": "mkdir /QOpenSys/PRO/Entry-Audit/views && cp -rf ./views /QOpenSys/PRO/Entry-Audit/",
+
+    "predeploy": "npm run clean && npm run clean-pro",
+    "deploy": "npm run build-pro && npm run copy-views-pro && npm run copy-package-pro && cd /QOpenSys/PRO/Entry-Audit && npm install --production",
+    "postdeploy": "cd /QOpenSys/PRO/Entry-Audit && NODE_ENV=production forever start --append --uid Entry-Audit ./index.js",
+
+    "pregit": "git add .",
+    "git": "git commit -m \"$message\"",
+    "postgit": "git push origin master"
+  },
+  "author": "Joe Olliff",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "async": "^2.6.1",
+    "babel-polyfill": "^6.26.0",
+    "bluebird": "^3.5.1",
+    "body-parser": "^1.18.3",
+    "config": "^2.0.1",
+    "cookie-parser": "^1.4.3",
+    "ejs": "^2.6.1",
+    "express": "^4.16.3",
+    "moment": "^2.22.2",
+    "moment-timezone": "^0.5.21",
+    "morgan": "^1.9.0",
+    "underscore": "^1.9.1",
+    "winston": "^2.2.0",
+    "xlsx": "^0.13.4"
+  },
+  "devDependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-core": "^6.26.3",
+    "babel-preset-env": "^1.7.0",
+    "babel-register": "^6.26.0",
+    "regenerator-runtime": "^0.12.1",
+    "rimraf": "^2.6.2"
+  }
+}
